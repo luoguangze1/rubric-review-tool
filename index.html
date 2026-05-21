@@ -244,10 +244,11 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   const tabs = document.querySelectorAll('.tab-btn');
-  const map = {rubrics:0, disc:1, responses:2};
+  const map = {disc:0, responses:1};
   const idx = map[tab] || 0;
-  tabs[idx].classList.add('active');
-  document.getElementById('tab-' + tab).classList.add('active');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  const pane = document.getElementById('tab-' + tab);
+  if (pane) pane.classList.add('active');
 }
 
 function getModelIcon(model) {
@@ -289,24 +290,7 @@ function renderDiscriminativeTab(d) {
     </div>
   </div>`;
 
-  // Model balance check
-  const balance = dMeta.balance_check || {};
-  if (Object.keys(balance).length > 0) {
-    html += `<div style="margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px">MODEL BALANCE (expected pass rates)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">`;
-    for (const [model, stats] of Object.entries(balance)) {
-      const pct = stats.pass_rate_pct || 0;
-      const pctNum = parseInt(String(pct));
-      const color = pctNum >= 25 && pctNum <= 75 ? '#4ade80' : '#f87171';
-      const shortName = model.length > 25 ? model.slice(0,22)+'...' : model;
-      html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10px;display:flex;align-items:center;gap:4px" title="${escAttr(model)}: ${stats.expected_passes||'?'} pass / ${stats.expected_fails||'?'} fail">
-        <span style="color:${color};font-weight:700">${pct}%</span>
-        <span style="color:var(--text3)">${escHtml(shortName)}</span>
-      </div>`;
-    }
-    html += `</div></div>`;
-  }
+  // Model balance section removed per user request
 
   // Toolbar
   html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
