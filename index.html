@@ -269,18 +269,24 @@ function renderDiscriminativeTab(d) {
 
   let html = '';
 
+  // Count critical vs important
+  const critRubrics = dRubrics.filter(r => (r.criticality||'') === 'Critical');
+  const impRubrics = dRubrics.filter(r => (r.criticality||'') !== 'Critical');
+
   // Summary banner
   html += `<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:16px 20px;border-radius:10px;margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <div><span style="font-size:24px;font-weight:800">${dRubrics.length}</span><br><span style="font-size:10px;opacity:.7">DISCRIMINATIVE<br>RUBRICS</span></div>
+      <div><span style="font-size:24px;font-weight:800">${dRubrics.length}</span><br><span style="font-size:10px;opacity:.7">TOTAL<br>RUBRICS</span></div>
       <div style="width:1px;height:36px;background:rgba(255,255,255,.2)"></div>
-      <div><span style="font-size:16px;font-weight:700;color:#60a5fa">${dims.length}</span> <span style="font-size:10px;opacity:.7">divergence dims</span></div>
+      <div><span style="font-size:16px;font-weight:700;color:#f87171">${critRubrics.length}</span> <span style="font-size:10px;opacity:.7">Critical<br>(Pass/Fail)</span></div>
       <div style="width:1px;height:36px;background:rgba(255,255,255,.2)"></div>
-      <div><span style="font-size:16px;font-weight:700;color:#a78bfa">${Object.keys(profiles).length}</span> <span style="font-size:10px;opacity:.7">model profiles</span></div>
+      <div><span style="font-size:16px;font-weight:700;color:#60a5fa">${impRubrics.length}</span> <span style="font-size:10px;opacity:.7">Important<br>(Score -5 to +5)</span></div>
       <div style="width:1px;height:36px;background:rgba(255,255,255,.2)"></div>
-      <div><span style="font-size:16px;font-weight:700;color:#fbbf24">${factual.length}</span> <span style="font-size:10px;opacity:.7">factual disputes</span></div>
+      <div><span style="font-size:16px;font-weight:700;color:#a78bfa">${Object.keys(profiles).length}</span> <span style="font-size:10px;opacity:.7">model<br>profiles</span></div>
     </div>
-    ${dMeta.discrimination_summary ? '<p style="margin:10px 0 0;font-size:11px;opacity:.8;line-height:1.5">'+escHtml(dMeta.discrimination_summary)+'</p>' : ''}
+    <div style="margin-top:10px;font-size:10px;opacity:.7;line-height:1.5;border-top:1px solid rgba(255,255,255,.15);padding-top:8px">
+      <strong>Frontier fail rule:</strong> A model fails this task if it fails ≥ 1 Critical rubric <em>or</em> scores ≤ 70% on Important rubrics.
+    </div>
   </div>`;
 
   // Model balance check
@@ -327,17 +333,22 @@ function discRubricCardHtml(r, i) {
   const crit = r.criticality || 'Important';
   const criterion = r.rubric_criterion || r.rubric || '';
   const evidence = r.evidence_span || r.evidence_required || '';
-  const scoreRange = r.score_range || [-5,5];
   const passModels = (r.models_expected_to_pass||[]).join(', ');
   const failModels = (r.models_expected_to_fail||[]).join(', ');
-  const critBadge = crit === 'Critical' ? '<span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px">CRITICAL</span>' : '';
-  return `<div class="rubric-card disc-card" id="drc-${i}">
+  const isCritical = crit === 'Critical';
+  const scoringLabel = isCritical
+    ? '<span style="font-size:9px;color:#fca5a5;font-weight:700;margin-left:auto;background:#7f1d1d;padding:1px 6px;border-radius:4px">PASS / FAIL</span>'
+    : '<span style="font-size:9px;color:var(--text3);margin-left:auto">Score: [-5, +5]</span>';
+  const critBadge = isCritical ? '<span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px">CRITICAL</span>' : '';
+  const passLabel = isCritical ? 'What PASS looks like' : 'What PASSING looks like (+3 to +5)';
+  const failLabel = isCritical ? 'What FAIL looks like' : 'What FAILING looks like (-3 to -5)';
+  return `<div class="rubric-card disc-card" id="drc-${i}" style="${isCritical?'border-left:3px solid #dc2626':''}">
     <div class="rubric-top">
       <input class="rubric-id-input" data-field="id" value="${escAttr(String(r.id||i+1))}" title="Rubric ID" onfocus="isEditing=true" onblur="isEditing=false">
       <select data-field="capability_axis" onchange="isEditing=true" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text)">${axes.map(a=>`<option ${axis===a?'selected':''}>${a}</option>`).join('')}</select>
-      <select data-field="criticality" onchange="isEditing=true" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:${crit==='Critical'?'#7f1d1d':'var(--bg)'};color:${crit==='Critical'?'#fca5a5':'var(--text)'}">${critLevels.map(c=>`<option ${crit===c?'selected':''}>${c}</option>`).join('')}</select>
+      <select data-field="criticality" onchange="isEditing=true" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:${isCritical?'#7f1d1d':'var(--bg)'};color:${isCritical?'#fca5a5':'var(--text)'}">${critLevels.map(c=>`<option ${crit===c?'selected':''}>${c}</option>`).join('')}</select>
       ${critBadge}
-      <span style="font-size:9px;color:var(--text3);margin-left:auto">Score: [${scoreRange[0]}, ${scoreRange[1]}]</span>
+      ${scoringLabel}
       <button class="rubric-del" onclick="this.closest('.disc-card').remove();isEditing=true" title="Delete rubric">&#x2715;</button>
     </div>
     <div class="field-group">
@@ -350,11 +361,11 @@ function discRubricCardHtml(r, i) {
     </div>
     <div style="display:flex;gap:8px">
       <div class="field-group" style="flex:1">
-        <span class="field-label" style="color:#4ade80">What PASSING looks like (+3 to +5)</span>
+        <span class="field-label" style="color:#4ade80">${passLabel}</span>
         <textarea class="evidence-ta" data-field="what_passing_looks_like" onfocus="isEditing=true" onblur="isEditing=false">${escHtml(r.what_passing_looks_like||'')}</textarea>
       </div>
       <div class="field-group" style="flex:1">
-        <span class="field-label" style="color:#f87171">What FAILING looks like (-3 to -5)</span>
+        <span class="field-label" style="color:#f87171">${failLabel}</span>
         <textarea class="evidence-ta" data-field="what_failing_looks_like" onfocus="isEditing=true" onblur="isEditing=false">${escHtml(r.what_failing_looks_like||'')}</textarea>
       </div>
     </div>
