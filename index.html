@@ -337,6 +337,9 @@ function discRubricCardHtml(r, i) {
       </div>`;
   const passLabel = isCritical ? 'What PASS looks like' : 'What PASSING looks like';
   const failLabel = isCritical ? 'What FAIL looks like' : 'What FAILING looks like';
+  const hasPass = r.what_passing_looks_like || '';
+  const hasFail = r.what_failing_looks_like || '';
+  const hasTrade = r.trade_off || '';
   return `<div class="rubric-card disc-card" id="drc-${i}" style="${isCritical?'border-left:3px solid #dc2626':''}">
     <div class="rubric-top">
       <input class="rubric-id-input" data-field="id" value="${escAttr(String(r.id||i+1))}" title="Rubric ID" onfocus="isEditing=true" onblur="isEditing=false">
@@ -354,20 +357,20 @@ function discRubricCardHtml(r, i) {
       <span class="field-label" style="color:#60a5fa">Evidence Span</span>
       <textarea class="evidence-ta" data-field="evidence_span" onfocus="isEditing=true" onblur="isEditing=false">${escHtml(evidence)}</textarea>
     </div>
-    <div style="display:flex;gap:8px">
-      <div class="field-group" style="flex:1">
+    ${(hasPass || hasFail) ? `<div style="display:flex;gap:8px">
+      ${hasPass ? `<div class="field-group" style="flex:1">
         <span class="field-label" style="color:#4ade80">${passLabel}</span>
-        <textarea class="evidence-ta" data-field="what_passing_looks_like" onfocus="isEditing=true" onblur="isEditing=false">${escHtml(r.what_passing_looks_like||'')}</textarea>
-      </div>
-      <div class="field-group" style="flex:1">
+        <div style="font-size:11px;color:var(--text2);line-height:1.5;padding:4px 0">${escHtml(hasPass)}</div>
+      </div>` : ''}
+      ${hasFail ? `<div class="field-group" style="flex:1">
         <span class="field-label" style="color:#f87171">${failLabel}</span>
-        <textarea class="evidence-ta" data-field="what_failing_looks_like" onfocus="isEditing=true" onblur="isEditing=false">${escHtml(r.what_failing_looks_like||'')}</textarea>
-      </div>
-    </div>
-    <div class="field-group">
+        <div style="font-size:11px;color:var(--text2);line-height:1.5;padding:4px 0">${escHtml(hasFail)}</div>
+      </div>` : ''}
+    </div>` : ''}
+    ${hasTrade ? `<div class="field-group">
       <span class="field-label" style="color:#a78bfa">Trade-off</span>
-      <textarea class="evidence-ta" data-field="trade_off" onfocus="isEditing=true" onblur="isEditing=false">${escHtml(r.trade_off||'')}</textarea>
-    </div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.5;padding:4px 0">${escHtml(hasTrade)}</div>
+    </div>` : ''}
     <div style="display:flex;gap:8px;font-size:10px;margin-top:4px">
       <div style="flex:1;color:var(--green)"><strong>Expected pass:</strong> ${escHtml(passModels||'—')}</div>
       <div style="flex:1;color:var(--red)"><strong>Expected fail:</strong> ${escHtml(failModels||'—')}</div>
