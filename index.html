@@ -320,19 +320,30 @@ function discRubricCardHtml(r, i) {
   const passModels = (r.models_expected_to_pass||[]).join(', ');
   const failModels = (r.models_expected_to_fail||[]).join(', ');
   const isCritical = crit === 'Critical';
-  const scoringLabel = isCritical
-    ? '<span style="font-size:9px;color:#fca5a5;font-weight:700;margin-left:auto;background:#7f1d1d;padding:1px 6px;border-radius:4px">PASS / FAIL</span>'
-    : '<span style="font-size:9px;color:var(--text3);margin-left:auto">Score: [-5, +5]</span>';
+  const curScore = r.score != null ? r.score : '';
+  const curVerdict = r.verdict || '';
   const critBadge = isCritical ? '<span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px">CRITICAL</span>' : '';
-  const passLabel = isCritical ? 'What PASS looks like' : 'What PASSING looks like (+3 to +5)';
-  const failLabel = isCritical ? 'What FAIL looks like' : 'What FAILING looks like (-3 to -5)';
+  const scoringWidget = isCritical
+    ? `<select data-field="verdict" onchange="isEditing=true" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid #7f1d1d;background:#1a1a2e;color:#fca5a5;font-weight:700;margin-left:auto">
+        <option value="" ${!curVerdict?'selected':''}>— not scored —</option>
+        <option value="Pass" ${curVerdict==='Pass'?'selected':''}>✓ PASS</option>
+        <option value="Fail" ${curVerdict==='Fail'?'selected':''}>✗ FAIL</option>
+      </select>`
+    : `<div style="display:flex;align-items:center;gap:4px;margin-left:auto">
+        <span style="font-size:9px;color:var(--text3)">Score:</span>
+        <input type="number" data-field="score" min="-5" max="5" step="1" value="${curScore}" placeholder="—"
+          onfocus="isEditing=true" onblur="isEditing=false" onchange="isEditing=true"
+          style="width:42px;text-align:center;font-size:12px;font-weight:700;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--accent)">
+      </div>`;
+  const passLabel = isCritical ? 'What PASS looks like' : 'What high score looks like';
+  const failLabel = isCritical ? 'What FAIL looks like' : 'What low score looks like';
   return `<div class="rubric-card disc-card" id="drc-${i}" style="${isCritical?'border-left:3px solid #dc2626':''}">
     <div class="rubric-top">
       <input class="rubric-id-input" data-field="id" value="${escAttr(String(r.id||i+1))}" title="Rubric ID" onfocus="isEditing=true" onblur="isEditing=false">
       <select data-field="capability_axis" onchange="isEditing=true" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text)">${axes.map(a=>`<option ${axis===a?'selected':''}>${a}</option>`).join('')}</select>
       <select data-field="criticality" onchange="isEditing=true" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:${isCritical?'#7f1d1d':'var(--bg)'};color:${isCritical?'#fca5a5':'var(--text)'}">${critLevels.map(c=>`<option ${crit===c?'selected':''}>${c}</option>`).join('')}</select>
       ${critBadge}
-      ${scoringLabel}
+      ${scoringWidget}
       <button class="rubric-del" onclick="this.closest('.disc-card').remove();isEditing=true" title="Delete rubric">&#x2715;</button>
     </div>
     <div class="field-group">
@@ -382,15 +393,20 @@ async function saveDiscRubrics() {
   const rubrics = [];
   cards.forEach(card => {
     const get = f => { const el = card.querySelector(`[data-field="${f}"]`); return el ? el.value : ''; };
+    const criticality = get('criticality') || 'Important';
+    const scoreVal = get('score');
+    const verdictVal = get('verdict');
     rubrics.push({
       id: get('id'),
-      category: get('category'),
-      rubric: get('rubric'),
-      weight: 1,
+      capability_axis: get('capability_axis'),
+      criticality: criticality,
+      rubric_criterion: get('rubric_criterion'),
+      evidence_span: get('evidence_span'),
+      score: criticality === 'Critical' ? null : (scoreVal !== '' ? parseInt(scoreVal) : null),
+      verdict: criticality === 'Critical' ? verdictVal : null,
       what_passing_looks_like: get('what_passing_looks_like'),
       what_failing_looks_like: get('what_failing_looks_like'),
       trade_off: get('trade_off'),
-      discriminative_source: '',
       models_expected_to_pass: [],
       models_expected_to_fail: [],
     });
@@ -628,13 +644,17 @@ saveDiscRubrics = async function() {
   const rubrics = [];
   cards.forEach(card => {
     const get = f => { const el = card.querySelector('[data-field="'+f+'"]'); return el ? el.value : ''; };
+    const criticality = get('criticality') || 'Important';
+    const scoreVal = get('score');
+    const verdictVal = get('verdict');
     rubrics.push({
       id: get('id'),
       capability_axis: get('capability_axis'),
-      criticality: get('criticality'),
+      criticality: criticality,
       rubric_criterion: get('rubric_criterion'),
       evidence_span: get('evidence_span'),
-      score_range: [-5, 5],
+      score: criticality === 'Critical' ? null : (scoreVal !== '' ? parseInt(scoreVal) : null),
+      verdict: criticality === 'Critical' ? verdictVal : null,
       what_passing_looks_like: get('what_passing_looks_like'),
       what_failing_looks_like: get('what_failing_looks_like'),
       trade_off: get('trade_off'),
