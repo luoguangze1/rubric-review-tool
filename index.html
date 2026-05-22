@@ -335,8 +335,8 @@ function discRubricCardHtml(r, i) {
           onfocus="isEditing=true" onblur="isEditing=false" onchange="isEditing=true"
           style="width:42px;text-align:center;font-size:12px;font-weight:700;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--accent)">
       </div>`;
-  const passLabel = isCritical ? 'What PASS looks like' : 'What high score looks like';
-  const failLabel = isCritical ? 'What FAIL looks like' : 'What low score looks like';
+  const passLabel = isCritical ? 'What PASS looks like' : 'What PASSING looks like';
+  const failLabel = isCritical ? 'What FAIL looks like' : 'What FAILING looks like';
   return `<div class="rubric-card disc-card" id="drc-${i}" style="${isCritical?'border-left:3px solid #dc2626':''}">
     <div class="rubric-top">
       <input class="rubric-id-input" data-field="id" value="${escAttr(String(r.id||i+1))}" title="Rubric ID" onfocus="isEditing=true" onblur="isEditing=false">
